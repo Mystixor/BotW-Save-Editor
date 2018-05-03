@@ -7,9 +7,9 @@
 
 0x0C  start of save data array:
 
-  0x00  hash value (int)
+		0x00  hash value (int)
   
-  0x04  data value (int, uint, char, etc.)
+		0x04  data value (int, uint, char, etc.)
   
 
 
