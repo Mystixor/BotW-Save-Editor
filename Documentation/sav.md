@@ -7,4 +7,5 @@
 	0x04  data value (int, uint, char, etc.)
 
 The hash value is found again in Bootup.pack --> GameData/savedataformat.ssarc
+
 There every hash is assigned a readable name that helps understanding what the data value defines.
