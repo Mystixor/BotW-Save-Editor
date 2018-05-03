@@ -1,3 +1,5 @@
+//BotW Save Editor v1.1
+
 #include <iostream>
 #include <fstream>
 #include <windows.h>
@@ -19,7 +21,7 @@ void Import(string path, string name) {
 	doc.ParseStream(is);
 	fclose(inJ);
 
-	int magic = htonl(18203);
+	int magic = htonl(doc["signature"].GetInt());
 	int placeHolder = htonl(-1);
 	int maybeVersion = htonl(1);
 
@@ -43,21 +45,25 @@ void Import(string path, string name) {
 	out.close();
 }
 
-void Export(string path, string name) {
+void Export(string path, string name, int magic, const char* savdataExtension) {
 	fstream in;
 	in.open(path, std::fstream::in | std::fstream::ate | std::fstream::binary);
 	int size = in.tellg();
 	cout << "\nStarted exporting \"" << name << "\" to \"" << name + ".json" <<"\" ..." << endl;
 	in.seekg(12);
 
-	FILE* inJ = fopen("savdata_list.json", "rb");
+	string savdataList = string("savdata_list").append(savdataExtension).append(".json");
+
+	FILE* inJ = fopen(savdataList.c_str(), "rb");
 	char readBuffer[65536];
 	FileReadStream is(inJ, readBuffer, sizeof(readBuffer));
 	Document doc;
 	doc.ParseStream(is);
 	fclose(inJ);
 
-	string JSON = "{\"savdata\": []}";
+	string JSON = string("{\"signature\": ").append(to_string((int)htonl(magic))).append(",");
+
+	JSON += "\"savdata\": []}";
 	char *HashValue;
 	char *DataValue;
 	string savdata = "";
@@ -131,13 +137,28 @@ int main(int argc, char *argv[])
 			}
 			if(htonl(magic) == 18203)
 			{
-				cout << "Detected save file!" << endl;
-				Export(filepath, filename);
+				cout << "Detected v1.5.0 save file!" << endl;
+				Export(filepath, filename, magic, "471B");
 			}
 			else if(filename.find(".json") != string::npos)
 			{
 				cout << "Detected JSON!" << endl;
 				Import(filepath, filename);
+			}
+			else if(htonl(magic) == 18202)
+			{
+				cout << "Detected v1.4.0+ save file!" << endl;
+				Export(filepath, filename, magic, "471A");
+			}
+			else if(htonl(magic) == 10688)
+			{
+				cout << "Detected unsupported version! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
+				break;
+			}
+			else if(htonl(magic) == 9454)
+			{
+				cout << "Detected old save file! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
+				Export(filepath, filename, magic, "24EE");
 			}
 			else
 			{
