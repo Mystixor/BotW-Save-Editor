@@ -1,5 +1,5 @@
 # *.sav format
-0x00  version indicator (int)\n
+0x00  version indicator (int)
 0x04  placeholder, always 0xFFFFFFFF
 0x08  maybe format version? always 0x00000001
 0x0C  start of save data array:
