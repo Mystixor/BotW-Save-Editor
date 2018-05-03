@@ -1,3 +1,5 @@
+//GUI branch of BotW Save Editor
+
 #include <iostream>
 #include <fstream>
 #include <windows.h>
