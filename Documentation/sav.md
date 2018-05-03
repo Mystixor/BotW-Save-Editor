@@ -3,6 +3,7 @@
 	0x04  placeholder, always 0xFFFFFFFF
 	0x08  maybe format version? always 0x00000001
 	0x0C  start of save data array:
+	
 	0x00  hash value (int)
 	0x04  data value (int, uint, char, etc.)
 
