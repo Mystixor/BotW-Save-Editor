@@ -4,8 +4,9 @@ This is the GUI for the BotW Save Editor written in C++ and Qt.
 # How to use:
 1.  Download the Console 1.1 or newer version.
 2.  Drag your "\[game_data/caption/option\].sav" onto "Simple Save Editor.exe" and let it work for a moment.
+3.  Then drag all save files in the same directory how the GUI.
 3.  Open the GUI and edit what you want.
-4.  Click on the Save Button.
+4.  Click on the Save button.
 5.  Save and drag the JSON onto the EXE again.
 6.  Have fun with the newly created save file!
 
