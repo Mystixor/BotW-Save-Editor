@@ -11,5 +11,8 @@ This is the GUI for the BotW Save Editor written in C++ and Qt.
 
 In case you encounter any problems with the GUI, please make an issue or notify me via Discord, you can find me on the BotW Modding Discord (Mika#1257).
 
+# Troubleshooting
+If the dll MSVCP140.dll is missing please install Microsoft Visual C++ Redistributable for Visual Studio 2017
+
 # License stuff
 You may use my code in any way you wish, as long as I'm openly credited ;)
