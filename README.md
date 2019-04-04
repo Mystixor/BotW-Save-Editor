@@ -11,7 +11,7 @@ Big thanks to zephenryus, assisting to reverse engineer the save files.
 3.  Save and drag the JSON onto the EXE again.
 4.  Have fun with the newly created save file!
 
-In case you encounter any problems, please notify me via Discord, you can find me on the BotW Modding Discord (Mystixor#6773).
+In case you encounter any problems with the Windows version, please notify me via Discord, you can find me on the BotW Modding Discord (Mystixor#6773) and when you have problems with the linux version please create an issue on github or notify me via Discord (Mika#1257)
 
 # Troubleshooting
 1.  A voluntary tester could not launch the EXE until he installed mingw32, I'm not sure what it was about but I will try to build with VS2017 in the future to avoid compiler problems.
