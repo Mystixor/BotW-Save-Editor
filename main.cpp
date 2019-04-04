@@ -2,11 +2,12 @@
 
 #include <iostream>
 #include <fstream>
-#include <windows.h>
-#include <rapidjson\document.h>
-#include "rapidjson\filereadstream.h"
-#include "rapidjson\filewritestream.h"
-#include <rapidjson\prettywriter.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <rapidjson/document.h>
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
+#include <rapidjson/prettywriter.h>
 #include <cstdio>
 #include <sstream>
 
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
 		case 1:
 		{
 			cout << "Please use a *.sav file on the application." << endl;
-			Sleep(1500);
+			usleep(1500);
 			break;
 		}
 		case 2:
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
 			else
 			{
 				cout << "Given file is not a save! Known files are:\n\ngame_data.sav\ncaption.sav\noption.sav" << endl;
-				Sleep(3000);
+				usleep(3000);
 				break;
 			}
 			break;
@@ -171,7 +172,7 @@ int main(int argc, char *argv[])
 		default:
 		{
 			cout << "Please supply only one file." << endl;
-			Sleep(1500);
+			usleep(1500);
 			break;
 		}
 	}
