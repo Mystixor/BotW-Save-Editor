@@ -1,2 +1,2 @@
 main: main.cpp
-	g++ -o save-editor.out main.cpp -fpermissive
+	g++ -o save-editor.elf main.cpp -fpermissive
