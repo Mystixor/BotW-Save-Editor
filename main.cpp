@@ -1,3 +1,5 @@
+//Linux compiler command: g++ -std=c++17 main.cpp -fpermissive -o editor
+
 #ifdef __unix__
 #include <iostream>
 #include <arpa/inet.h>
