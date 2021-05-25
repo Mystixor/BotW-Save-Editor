@@ -1,179 +1,133 @@
-//BotW Save Editor v1.1
-
+#ifdef __unix__
 #include <iostream>
+#include <arpa/inet.h>
+#include <unistd.h>
+#elif defined(_WIN32) || defined(WIN32)
+#pragma comment(lib, "Ws2_32.lib")
+#define _CRT_SECURE_NO_DEPRECATE
+#include <iostream>
+#include <winsock.h>
+#endif
+#include <iomanip>
 #include <fstream>
-#include <windows.h>
-#include <rapidjson\document.h>
-#include "rapidjson\filereadstream.h"
-#include "rapidjson\filewritestream.h"
-#include <rapidjson\prettywriter.h>
-#include <cstdio>
-#include <sstream>
+#include "json.hpp"
 
 using namespace std;
-using namespace rapidjson;
+using namespace nlohmann;
+
+void csleep(int microseconds) {
+#ifdef __unix__
+    usleep(microseconds);
+#elif defined(_WIN32) || defined(WIN32)
+    Sleep(microseconds);
+#endif
+}
 
 void Import(string path, string name) {
-	FILE* inJ = fopen(path.c_str(), "rb");
-	char readBuffer[65536];
-	FileReadStream is(inJ, readBuffer, sizeof(readBuffer));
-	Document doc;
-	doc.ParseStream(is);
-	fclose(inJ);
 
-	int magic = htonl(doc["signature"].GetInt());
-	int placeHolder = htonl(-1);
-	int maybeVersion = htonl(1);
-
-	const char* Path = path.erase(path.length()-5, 5).c_str();
-	fstream out;
-	out.open(Path, std::fstream::out | std::fstream::ate | std::fstream::binary);
-	out.seekg(0);
-	out.write((const char*)&magic, 4);
-	out.write((const char*)&placeHolder, 4);
-	out.write((const char*)&maybeVersion, 4);
-
-	for(unsigned int i = 0; i < doc["savdata"].Size(); i++)
-	{
-		int HashValue = htonl(doc["savdata"][i]["HashValue"].GetInt());
-		out.write((const char*)&HashValue, 4);
-		unsigned int DataValue = htonl(doc["savdata"][i]["DataValue"].GetUint());
-		out.write((const char*)&DataValue, 4);
-	}
-
-	out.write((const char*)&placeHolder, 4);
-	out.close();
 }
 
-void Export(string path, string name, int magic, const char* savdataExtension) {
-	fstream in;
-	in.open(path, std::fstream::in | std::fstream::ate | std::fstream::binary);
-	int size = in.tellg();
-	cout << "\nStarted exporting \"" << name << "\" to \"" << name + ".json" <<"\" ..." << endl;
-	in.seekg(12);
+void Export(string path, string name, int magic, const char* savedataExtension) {
+    fstream in;
+    in.open(path, fstream::in | fstream::ate | fstream::binary);
+    int size = in.tellg();
+    cout << endl << "Started exporting \"" << name << "\" to \"" << name + ".json" << "\" ..." << endl;
+    in.seekg(12);
 
-	string savdataList = string("savdata_list").append(savdataExtension).append(".json");
+    string savedataList = string("savdata_list").append(savedataExtension).append(".json");
 
-	FILE* inJ = fopen(savdataList.c_str(), "rb");
-	char readBuffer[65536];
-	FileReadStream is(inJ, readBuffer, sizeof(readBuffer));
-	Document doc;
-	doc.ParseStream(is);
-	fclose(inJ);
+    ifstream savedataListIF(savedataList);
+    if(savedataListIF.fail()) {
+        cout << savedataList << " not found or access denied!" << endl;
+        return;
+    }
+    
+    json savedataListJson;
+    savedataListIF >> savedataListJson;
+    savedataListIF.close();
 
-	string JSON = string("{\"signature\": ").append(to_string((int)htonl(magic))).append(",");
+    json saveOutputJson;
+    saveOutputJson["signature"] = to_string((int)htonl(magic));
+    
+    char *HashValue;
+    char *DataValue;
+    json savedataArray = json::array();
 
-	JSON += "\"savdata\": []}";
-	char *HashValue;
-	char *DataValue;
-	string savdata = "";
+    for(int i = 0; i < (size - 16) / 8; i++) {
+        in.read((char*) &HashValue, sizeof(HashValue));
+        in.read((char*) &DataValue, sizeof(DataValue));
+        int hash = (int)(htonl((unsigned int) HashValue));
+        if(hash < 2147483647) {
+            json savedataObject = json::object();
 
-	for(int i = 0; i < (size - 16) / 8; i++)
-	{
-		in.read((char*)&HashValue, sizeof(HashValue));
-		in.read((char*)&DataValue, sizeof(DataValue));
-		if((int)(htonl((unsigned int)HashValue)) < 2147483647)
-		{
-			savdata = "{\"DataName\": \"";
-			savdata += doc[name.c_str()][to_string((int)(htonl((unsigned int)HashValue))).c_str()].GetString();
-			savdata += "\",\"HashValue\": ";
-			savdata += to_string((int)(htonl((unsigned int)HashValue)));
-			savdata += ",\"DataValue\": ";
-			savdata += to_string(htonl((unsigned int)DataValue));
-			savdata += "}";
-			JSON.insert(JSON.length()-2, savdata);
-			if(i < ((size - 16) / 8) - 1)
-			{
-				JSON.insert(JSON.length()-2, ",");
-			}
-		}
-	}
+            savedataObject["DataName"] = savedataListJson[name][to_string(hash)];
+            savedataObject["HashValue"] = to_string(hash);
+            savedataObject["DataValue"] = to_string(htonl((unsigned int) DataValue));
 
-	in.close();
+            savedataArray.push_back(savedataObject);
+        }
+    }
+    saveOutputJson["savdata"] = savedataArray;
+    
+    in.close();
 
-	const char *json = JSON.c_str();
-
-	Document d;
-	d.Parse(json);
-
-	FILE* out = fopen((name + ".json").c_str(), "wb");
-	char writeBuffer[65536];
-	FileWriteStream os(out, writeBuffer, sizeof(writeBuffer));
-	PrettyWriter<FileWriteStream> writer(os);
-	d.Accept(writer);
-	fclose(out);
+    ofstream output((name + ".json").c_str());
+    output << std::setw(4) << saveOutputJson << endl;
+    output.flush();
+    output.close();
 }
 
-int main(int argc, char *argv[])
-{
-	cout << "\n\nBotW Save Editor by Mystixor. Big thanks to zephenryus, assisting to reverse engineer the save files.\n\n" << endl;
-	switch(argc)
-	{
-		case 1:
-		{
-			cout << "Please use a *.sav file on the application." << endl;
-			Sleep(1500);
-			break;
-		}
-		case 2:
-		{
-			fstream in;
-			in.open(argv[1], std::fstream::in | std::fstream::binary);
-			uint32_t magic;
-			in.read((char*)&magic, sizeof(magic));
-			in.close();
+int main(int argc, char* argv[]) {
+    cout << endl << endl << "BotW Save Editor by Mystixor. Big thanks to zephenryus, assisting to reverse engineer the save files." << endl << endl << endl;
+    switch (argc) {
+    case 1:
+        cout << "Please use a *.sav file on the application." << endl;
+        csleep(1500);
+        break;
 
-			string filepath = argv[1];
+    case 2:
+        fstream in;
+        in.open(argv[1], fstream::in | fstream::binary);
+        uint32_t magic;
+        in.read((char*)&magic, sizeof(magic));
+        in.close();
 
-			string filename = filepath;
-			for(int f = filepath.length() - 1; f >= 0; f--)
-			{
-				if(filepath[f] == '/' || filepath[f] == '\\')
-				{
-					filename.erase(0, f+1);
-					cout << "Loaded file: \"" << filename << "\".\n" << endl;
-					break;
-				}
-			}
-			if(htonl(magic) == 18203)
-			{
-				cout << "Detected v1.5.0 save file!" << endl;
-				Export(filepath, filename, magic, "471B");
-			}
-			else if(filename.find(".json") != string::npos)
-			{
-				cout << "Detected JSON!" << endl;
-				Import(filepath, filename);
-			}
-			else if(htonl(magic) == 18202)
-			{
-				cout << "Detected v1.4.0+ save file!" << endl;
-				Export(filepath, filename, magic, "471A");
-			}
-			else if(htonl(magic) == 10688)
-			{
-				cout << "Detected unsupported version! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
-				break;
-			}
-			else if(htonl(magic) == 9454)
-			{
-				cout << "Detected old save file! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
-				Export(filepath, filename, magic, "24EE");
-			}
-			else
-			{
-				cout << "Given file is not a save! Known files are:\n\ngame_data.sav\ncaption.sav\noption.sav" << endl;
-				Sleep(3000);
-				break;
-			}
-			break;
-		}
-		default:
-		{
-			cout << "Please supply only one file." << endl;
-			Sleep(1500);
-			break;
-		}
-	}
-	return 0;
+        string filepath = argv[1];
+        string filename = filepath;
+
+        for (int i = filepath.length() - 1; i >= 0; i--) {
+            if (filepath[i] == '/' || filepath[i] == '\\') {
+                filename.erase(0, i + 1);
+                cout << "Loaded file: \"" << filename << "\"." << endl << endl;
+                break;
+            }
+        }
+        if (htonl(magic) == 18203) {
+            cout << "Detected v1.5.0 save file!" << endl;
+            Export(filepath, filename, magic, "471B");
+        }
+        else if (htonl(magic) == 18202) {
+            cout << "Detected 1.4.0+ save file!" << endl;
+            Export(filepath, filename, magic, "471A");
+        }
+        else if (htonl(magic) == 10688) {
+            cout << "Detected unsupported version! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
+            break;
+        }
+        else if (htonl(magic) == 9454) {
+            cout << "Detected old save file! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
+            Export(filepath, filename, magic, "24EE");
+        }
+        else if (filename.find(".json") != string::npos) {
+            cout << "Detected JSON!" << endl;
+            Import(filepath, filename);
+        }
+        else {
+            cout << "Given file is not a save! Known files are:" << endl << endl << "game_data.sav" << endl << "caption.sav" << endl << "option.sav" << endl;
+            csleep(3000);
+            break;
+        }
+        break;
+    }
+    return 0;
 }
