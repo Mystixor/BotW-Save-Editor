@@ -12,12 +12,12 @@
 #endif
 #include <iomanip>
 #include <fstream>
-#include "json.hpp"
+#include "json.h"
 
 using namespace std;
 using namespace nlohmann;
 
-void csleep(int microseconds) {
+void universalSleep(int microseconds) {
 #ifdef __unix__
     usleep(microseconds);
 #elif defined(_WIN32) || defined(WIN32)
@@ -43,14 +43,14 @@ void Export(string path, string name, int magic, const char* savedataExtension) 
         cout << savedataList << " not found or access denied!" << endl;
         return;
     }
-    
+
     json savedataListJson;
     savedataListIF >> savedataListJson;
     savedataListIF.close();
 
     json saveOutputJson;
     saveOutputJson["signature"] = to_string((int)htonl(magic));
-    
+
     char *HashValue;
     char *DataValue;
     json savedataArray = json::array();
@@ -70,7 +70,7 @@ void Export(string path, string name, int magic, const char* savedataExtension) 
         }
     }
     saveOutputJson["savdata"] = savedataArray;
-    
+
     in.close();
 
     ofstream output((name + ".json").c_str());
@@ -82,54 +82,54 @@ void Export(string path, string name, int magic, const char* savedataExtension) 
 int main(int argc, char* argv[]) {
     cout << endl << endl << "BotW Save Editor by Mystixor. Big thanks to zephenryus, assisting to reverse engineer the save files." << endl << endl << endl;
     switch (argc) {
-    case 1:
-        cout << "Please use a *.sav file on the application." << endl;
-        csleep(1500);
-        break;
+        case 1:
+            cout << "Please use a *.sav file on the application." << endl;
+            universalSleep(1500);
+            break;
 
-    case 2:
-        fstream in;
-        in.open(argv[1], fstream::in | fstream::binary);
-        uint32_t magic;
-        in.read((char*)&magic, sizeof(magic));
-        in.close();
+        case 2:
+            fstream in;
+            in.open(argv[1], fstream::in | fstream::binary);
+            uint32_t magic;
+            in.read((char*)&magic, sizeof(magic));
+            in.close();
 
-        string filepath = argv[1];
-        string filename = filepath;
+            string filepath = argv[1];
+            string filename = filepath;
 
-        for (int i = filepath.length() - 1; i >= 0; i--) {
-            if (filepath[i] == '/' || filepath[i] == '\\') {
-                filename.erase(0, i + 1);
-                cout << "Loaded file: \"" << filename << "\"." << endl << endl;
+            for (int i = filepath.length() - 1; i >= 0; i--) {
+                if (filepath[i] == '/' || filepath[i] == '\\') {
+                    filename.erase(0, i + 1);
+                    cout << "Loaded file: \"" << filename << "\"." << endl << endl;
+                    break;
+                }
+            }
+            if (htonl(magic) == 18203) {
+                cout << "Detected v1.5.0 save file!" << endl;
+                Export(filepath, filename, magic, "471B");
+            }
+            else if (htonl(magic) == 18202) {
+                cout << "Detected 1.4.0+ save file!" << endl;
+                Export(filepath, filename, magic, "471A");
+            }
+            else if (htonl(magic) == 10688) {
+                cout << "Detected unsupported version! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
                 break;
             }
-        }
-        if (htonl(magic) == 18203) {
-            cout << "Detected v1.5.0 save file!" << endl;
-            Export(filepath, filename, magic, "471B");
-        }
-        else if (htonl(magic) == 18202) {
-            cout << "Detected 1.4.0+ save file!" << endl;
-            Export(filepath, filename, magic, "471A");
-        }
-        else if (htonl(magic) == 10688) {
-            cout << "Detected unsupported version! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
+            else if (htonl(magic) == 9454) {
+                cout << "Detected old save file! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
+                Export(filepath, filename, magic, "24EE");
+            }
+            else if (filename.find(".json") != string::npos) {
+                cout << "Detected JSON!" << endl;
+                Import(filepath, filename);
+            }
+            else {
+                cout << "Given file is not a save! Known files are:" << endl << endl << "game_data.sav" << endl << "caption.sav" << endl << "option.sav" << endl;
+                universalSleep(3000);
+                break;
+            }
             break;
-        }
-        else if (htonl(magic) == 9454) {
-            cout << "Detected old save file! Please get in touch with me via Discord on the BotW Modding Hub." << endl;
-            Export(filepath, filename, magic, "24EE");
-        }
-        else if (filename.find(".json") != string::npos) {
-            cout << "Detected JSON!" << endl;
-            Import(filepath, filename);
-        }
-        else {
-            cout << "Given file is not a save! Known files are:" << endl << endl << "game_data.sav" << endl << "caption.sav" << endl << "option.sav" << endl;
-            csleep(3000);
-            break;
-        }
-        break;
     }
     return 0;
 }
