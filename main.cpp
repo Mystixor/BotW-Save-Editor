@@ -34,7 +34,10 @@ void Export(string path, string name, int magic, const char* savedataExtension) 
     in.open(path, fstream::in | fstream::ate | fstream::binary);
     int size = in.tellg();
     cout << endl << "Started exporting \"" << name << "\" to \"" << name + ".json" << "\" ..." << endl;
-    in.seekg(12);
+    in.seekg(0);
+
+    char saveFileBuffer[size];
+    in.read(saveFileBuffer, size);
 
     string savedataList = string("savdata_list").append(savedataExtension).append(".json");
 
@@ -57,6 +60,35 @@ void Export(string path, string name, int magic, const char* savedataExtension) 
 
     for(int i = 0; i < (size - 16) / 8; i++) {
         in.read((char*) &HashValue, sizeof(HashValue));
+        int hash = (int)(htonl((unsigned int) HashValue));
+        if(hash < 2147483647) {
+            string hashString = to_string(hash);
+            string fieldName = savedataListJson[name][hashString]["DataName"];
+            string dataType = savedataListJson[name][hashString]["DataType"];
+
+            if(dataType == "bool") {
+
+            }else if(dataType == "s32") {
+
+            }else if(dataType == "f32") {
+
+            }else if(dataType == "string") {
+
+            }else if(dataType == "string64") {
+
+            }else if(dataType == "string256") {
+
+            }else if(dataType == "vector2f") {
+
+            }else if(dataType == "vector3f") {
+
+            }else {
+                cout << dataType << endl;
+            }
+        }
+    }
+    /*for(int i = 0; i < (size - 16) / 8; i++) {
+        in.read((char*) &HashValue, sizeof(HashValue));
         in.read((char*) &DataValue, sizeof(DataValue));
         int hash = (int)(htonl((unsigned int) HashValue));
         if(hash < 2147483647) {
@@ -68,7 +100,7 @@ void Export(string path, string name, int magic, const char* savedataExtension) 
 
             savedataArray.push_back(savedataObject);
         }
-    }
+    }*/
     saveOutputJson["savdata"] = savedataArray;
 
     in.close();

@@ -1,0 +1,14 @@
+//
+// Created by mika on 9/23/21.
+//
+
+#ifndef BOTW_SAVE_EDITOR_STRINGTABLEPARSER_H
+#define BOTW_SAVE_EDITOR_STRINGTABLEPARSER_H
+
+
+class StringTableParser {
+
+};
+
+
+#endif //BOTW_SAVE_EDITOR_STRINGTABLEPARSER_H
